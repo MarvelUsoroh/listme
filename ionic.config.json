@@ -1,0 +1,7 @@
+{
+  "name": "listMe",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

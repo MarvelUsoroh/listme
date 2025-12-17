@@ -1,0 +1,33 @@
+:host{
+    .property-info-container {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        padding: 15px;
+    }
+
+    .property-details {
+        margin-left: 20px;
+    }
+
+    ion-item-divider {
+        margin-top: 20px;
+        margin-bottom: 15px;
+    }
+
+    ion-label {
+        font-size: 1.2rem;
+        margin: 0 auto;
+    }
+
+    @media screen and (max-width: 430px) {
+        .property-info-container {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto auto;
+            text-align: justify;
+        }
+
+        .property-details {
+            margin-left: 0;
+        }
+    }
+}

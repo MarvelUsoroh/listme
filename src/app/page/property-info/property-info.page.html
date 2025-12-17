@@ -1,0 +1,42 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/tab1"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ property?.title }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="property-info-container">
+    <div class="property-image">
+      <img [src]="property?.images" alt="{{ property?.title }}"/>
+    </div>
+    <div class="property-details">
+      <p>{{ property?.description }}</p>
+      <p><strong>Price:</strong> ${{ property?.price | number }}</p>
+      <p><strong>Location:</strong> {{ property?.location }}</p>
+      <p><strong>Bedrooms:</strong> {{ property?.bedrooms }}</p>
+      <p><strong>Bathrooms:</strong> {{ property?.bathrooms }}</p>
+    </div>
+  </div>
+
+  <ion-item-divider>
+      <ion-label>Other Apartments</ion-label>
+  </ion-item-divider>
+  
+  <div class="properties-container">
+    <ion-card *ngFor="let property of allProperties" (click)="viewPropertyInfo(property.id)">
+      <img alt="{{ property.title }}" [src]="property.images[0]" />
+      <ion-card-header>
+        <ion-card-title>{{ property.title }}</ion-card-title>
+        <ion-card-subtitle>${{ property.price | number }}</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <p><strong>Location:</strong> {{ property.location }}</p>
+        <p><strong>Bedrooms:</strong> {{ property.bedrooms }} | <strong>Bathrooms:</strong> {{ property.bathrooms }}</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+</ion-content>

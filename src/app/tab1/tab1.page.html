@@ -1,0 +1,27 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Available Properties</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Available Properties</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="properties-container">
+    <ion-card *ngFor="let property of properties" (click)="viewPropertyInfo(property.id)">
+      <img alt="{{ property.title }}" [src]="property.images[0]" />
+      <ion-card-header>
+        <ion-card-title>{{ property.title }}</ion-card-title>
+        <ion-card-subtitle>${{ property.price | number }}</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <p><strong>Location:</strong> {{ property.location }}</p>
+        <p><strong>Bedrooms:</strong> {{ property.bedrooms }} | <strong>Bathrooms:</strong> {{ property.bathrooms }}</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

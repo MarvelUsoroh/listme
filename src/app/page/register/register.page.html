@@ -1,0 +1,22 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Register</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Register</ion-title>
+    </ion-toolbar>
+  </ion-header>
+  <div class="form">
+    <input type="text" placeholder="Email" #email />
+    <input type="password" placeholder="Password" #pass />
+    <p *ngIf="error !== ''">{{error}}</p>
+    <ion-button (click)="register(email.value, pass.value)"
+      >Register</ion-button
+    >
+    <p>Already have an account? <a routerLink="/login">Login here</a></p>
+  </div>
+</ion-content>
