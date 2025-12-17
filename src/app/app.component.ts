@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, NgModule } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { AgmCoreModule } from 'ng-agm-core-lib';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -17,7 +18,7 @@ export class AppComponent {
   imports: [
     CommonModule,
     AgmCoreModule.forRoot({
-      apiKey: 'AIzaSyDwX7hJW0nvV9you1bh6ZhAFHXNByhOUwE',
+      apiKey: environment.googleMapsApiKey,
     }),
   ],
   exports: [AgmCoreModule],

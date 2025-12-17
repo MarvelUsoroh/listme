@@ -7,15 +7,13 @@ import {
 } from 'firebase/auth';
 import { Observable, from } from 'rxjs';
 import { observeNotification } from 'rxjs/internal/Notification';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class Identity {
-  private firebaseConfig = {
-    apiKey: 'AIzaSyBFhtJT1ZOe-70R-QhQn3XeWPoaVe1jvG0',
-    projectId: 'listme-dc189',
-  };
+  private firebaseConfig = environment.firebaseConfig;
   private app: any;
   private loggedInUser: any = null;
 

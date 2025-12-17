@@ -11,6 +11,8 @@ steps:
       - '-c'
       - |
         gcloud secrets versions access latest --secret=FIREBASE_CONFIG > src/environments/environment.prod.ts
+        # Create a placeholder environment.ts to satisfy Angular CLI file replacements
+        cp src/environments/environment.prod.ts src/environments/environment.ts
 
   # Step 3: Build the application
   - name: 'node:20'
