@@ -217,16 +217,76 @@ options:
 timeout: '900s'
 ```
 
-## **9. Deploy via GitHub**
-1. Push your code to a public GitHub repository.
-2. Create a Cloud Build Trigger in the GCP Console:
-   - **Event**: Push to a branch.
-   - **Source**: Your GitHub repository.
-   - **Configuration**: Cloud Build configuration file (`cloudbuild.yaml`).
+## **9. Deploy the Application**
 
-### **8. Verify Deployment**
-Once the build completes, your app will be live at:
-`https://YOUR_PROJECT_ID.web.app`
+You can deploy manualy using the following command, however it is recommended to use Cloud Build triggers for automatic deployment.:
+```bash
+gcloud app deploy
+```
+
+after that you can validate the deployment by executing:
+```bash
+gcloud app browse
+```
+
+Logs can be checked using the following command:
+```bash
+gcloud app logs tail -s default
+```
+
+
+### 9.1 Push Code to GitHub
+The following instruction shows deployment using Cloud Build triggers. If you prefer manual deployment, skip this step.
+
+1. Add a remote repository to your project:
+   ```bash
+   git remote add origin https://github.com/<YOUR_GITHUB_USERNAME>/<YOUR_REPOSITORY>.git
+   ```
+2. Push your code to GitHub:
+   ```bash
+   git add .
+   git commit -m "Initial commit"
+   git push -u origin main
+   ```
+
+### 9.2 Create a Cloud Build Trigger
+Set up a trigger in Google Cloud to deploy your app on every commit:
+```bash
+gcloud beta builds triggers create github \
+    --name="deploy-listme" \
+    --repo-name="<YOUR_REPOSITORY>" \
+    --repo-owner="<YOUR_GITHUB_USERNAME>" \
+    --branch-pattern=".*" \
+    --build-config="cloudbuild.yaml"
+```
+
+Replace `<YOUR_REPOSITORY>` and `<YOUR_GITHUB_USERNAME>` with your repository details.
+
+---
+
+## **10. Test the Application**
+
+1. Visit your application at:
+   ```
+   https://<YOUR_PROJECT_ID>.web.app
+   ```
+
+---
+
+## **11. Cleanup**
+
+To avoid incurring unnecessary costs, clean up the resources:
+
+Delete the project. First display list of projects:
+ 
+   ```bash
+   gcloud projects list
+   ```
+Then delete the project:
+   ```bash
+   gcloud projects delete <PROJECT_ID>
+   ```
+Replace `<PROJECT_ID>` with your project ID.
 
 ---
 
