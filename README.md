@@ -144,20 +144,38 @@ gcloud secrets versions access latest --secret="FIREBASE_CONFIG"
 
 ## **6. Grant Secret Manager Permissions**
 
-Allow the Cloud Build service account to access the `FIREBASE_CONFIG` secret.
+Create a user-managed service account for Cloud Build and allow it to access the `FIREBASE_CONFIG` secret.
 
-### 6.1 Get Project Number
+### 6.1 Create a Build Service Account
+Create a dedicated service account (example name: `listme-cloudbuild-deployer`):
+
+```bash
+gcloud iam service-accounts create listme-cloudbuild-deployer \
+  --display-name="ListMe Cloud Build Deployer"
+```
+
+### 6.2 Get Project Number
 Run the following command to get your Project Number:
 ```bash
 gcloud projects describe $(gcloud config get-value project) --format="value(projectNumber)"
 ```
 
-### 6.2 Grant Role
-Replace `[PROJECT_NUMBER]` with the number obtained in the previous step.
+### 6.3 Allow Cloud Build to Run as This Service Account
+Replace `YOUR_PROJECT_ID` and `[PROJECT_NUMBER]` with your values:
+
+```bash
+gcloud iam service-accounts add-iam-policy-binding \
+  listme-cloudbuild-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com \
+  --member="serviceAccount:service-[PROJECT_NUMBER]@gcp-sa-cloudbuild.iam.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountUser"
+```
+
+### 6.4 Grant Role
+Replace `YOUR_PROJECT_ID` with your Project ID.
 
 ```bash
 gcloud secrets add-iam-policy-binding FIREBASE_CONFIG \
-    --member="serviceAccount:[PROJECT_NUMBER]@cloudbuild.gserviceaccount.com" \
+  --member="serviceAccount:listme-cloudbuild-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
     --role="roles/secretmanager.secretAccessor"
 ```
 
@@ -165,21 +183,16 @@ gcloud secrets add-iam-policy-binding FIREBASE_CONFIG \
 
 ## **7. Configure IAM Permissions**
 
-Cloud Build needs specific permissions to deploy to Firebase Hosting. The Cloud Build service account uses the **Project Number** (not the Project ID) in its email address: `[PROJECT_NUMBER]@cloudbuild.gserviceaccount.com`.
+Cloud Build needs specific permissions to deploy to Firebase Hosting. This guide uses a user-managed service account:
 
-### 5.1 Get Your Project Number
-You can find your project number in the Google Cloud Console dashboard, or by running:
-```bash
-gcloud projects describe YOUR_PROJECT_ID --format="value(projectNumber)"
-```
-*Note: This is a number (e.g., `123456789012`), different from your text-based Project ID.*
+- `listme-cloudbuild-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com`
 
-### 5.2 Grant the Role
-Grant the `Firebase Hosting Admin` role to the Cloud Build service account. Replace `[PROJECT_NUMBER]` and `[PROJECT_ID]` with your actual values.
+### 7.1 Grant the Role
+Grant the `Firebase Hosting Admin` role to the build service account. Replace `YOUR_PROJECT_ID` with your actual value.
 
 ```bash
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-    --member="serviceAccount:[PROJECT_NUMBER]@cloudbuild.gserviceaccount.com" \
+  --member="serviceAccount:listme-cloudbuild-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
     --role="roles/firebasehosting.admin"
 ```
 
@@ -254,7 +267,7 @@ gcloud beta builds triggers create github \
     --branch-pattern="^main$" \
     --build-config="cloudbuild.yaml" \
     --region=global \
-    --service-account="projects/<YOUR_PROJECT_ID>/serviceAccounts/<YOUR_PROJECT_NUMBER>@cloudbuild.gserviceaccount.com"
+  --service-account="projects/<YOUR_PROJECT_ID>/serviceAccounts/listme-cloudbuild-deployer@<YOUR_PROJECT_ID>.iam.gserviceaccount.com"
 ```
 
 Replace `<YOUR_REPOSITORY>`, `<YOUR_GITHUB_USERNAME>`, `<YOUR_PROJECT_ID>`, and `<YOUR_PROJECT_NUMBER>` with your project details.
@@ -337,6 +350,11 @@ Ensure the Cloud Build step installs `firebase-tools` globally (`npm install -g 
 
 ### **Permission Denied during Deployment**
 Ensure the Cloud Build service account has the `Firebase Hosting Admin` role.
+
+### **INVALID_ARGUMENT: invalid value for build.service_account**
+This occurs if a trigger is configured to run builds as the default Cloud Build service account (`[PROJECT_NUMBER]@cloudbuild.gserviceaccount.com`).
+
+Fix: update the trigger to use a **user-managed** service account.
 
 ### **Firestore Connection Issues**
 Check that your `environment.prod.ts` has the correct `projectId` and `apiKey`. Ensure Firestore rules allow read/write access (for development/testing).
