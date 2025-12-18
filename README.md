@@ -5,7 +5,15 @@ This is an Ionic/Angular application that allows users to list and book properti
 This guide displays how to deploy the application locally and further down describes how to deploy it to Google Cloud Platform using Cloud Build.
 
 > **⚠️ EDUCATIONAL PURPOSE:**
-> This application is designed **for educational purposes only** to teach students how to deploy Cloud Native applications to Google Cloud Platform.
+> This application is designed **for educational purposes only** to share with learners how to deploy Cloud Native applications to Google Cloud Platform.
+
+---
+
+## **Architecture**
+
+The following diagram illustrates the cloud architecture and deployment pipeline for the ListMe application:
+
+![ListMe architecture](docs/architecture.drawio.png)
 
 ---
 
@@ -36,7 +44,9 @@ npm install
 ```
 
 ### **4. Configure Environment**
-Update `src/environments/environment.ts` with your Firebase configuration.
+For local development, create `src/environments/environment.ts` with your Firebase configuration.
+
+This repository ignores `src/environments/` to prevent committing secrets. For CI/CD, Cloud Build generates the environment files from Secret Manager.
 
 ### **5. Run Locally**
 ```bash
@@ -119,12 +129,10 @@ export const environment = {
 
 #### 5.2 Create the FIREBASE_CONFIG Secret
 Run the following command to create the secret named `FIREBASE_CONFIG`.
-*Tip: You can save the content above to a temporary file named `temp_env.ts` and run:*
 
 ```bash
 gcloud secrets create FIREBASE_CONFIG --data-file=[PATH_TO_YOUR_ENVIRONMENT_FILE]
 ```
-*After creating the secret, delete the temporary file.*
 
 ### 5.3 Verify the Secret
 To verify the secret was created correctly:
@@ -146,7 +154,6 @@ gcloud projects describe $(gcloud config get-value project) --format="value(proj
 
 ### 6.2 Grant Role
 Replace `[PROJECT_NUMBER]` with the number obtained in the previous step.
-*Note: Ensure you do not include a `$` sign or variable name.*
 
 ```bash
 gcloud secrets add-iam-policy-binding FIREBASE_CONFIG \
@@ -196,7 +203,9 @@ steps:
     args:
       - '-c'
       - |
+        mkdir -p src/environments
         gcloud secrets versions access latest --secret=FIREBASE_CONFIG > src/environments/environment.prod.ts
+        cp src/environments/environment.prod.ts src/environments/environment.ts
 
   # Step 3: Build the application
   - name: 'node:20'
@@ -219,24 +228,10 @@ timeout: '900s'
 
 ## **9. Deploy the Application**
 
-You can deploy manualy using the following command, however it is recommended to use Cloud Build triggers for automatic deployment.:
-```bash
-gcloud app deploy
-```
-
-after that you can validate the deployment by executing:
-```bash
-gcloud app browse
-```
-
-Logs can be checked using the following command:
-```bash
-gcloud app logs tail -s default
-```
-
+The application is deployed automatically using Cloud Build triggers.
 
 ### 9.1 Push Code to GitHub
-The following instruction shows deployment using Cloud Build triggers. If you prefer manual deployment, skip this step.
+The following instruction shows deployment using Cloud Build triggers.
 
 1. Add a remote repository to your project:
    ```bash
@@ -256,24 +251,69 @@ gcloud beta builds triggers create github \
     --name="deploy-listme" \
     --repo-name="<YOUR_REPOSITORY>" \
     --repo-owner="<YOUR_GITHUB_USERNAME>" \
-    --branch-pattern=".*" \
-    --build-config="cloudbuild.yaml"
+    --branch-pattern="^main$" \
+    --build-config="cloudbuild.yaml" \
+    --region=global \
+    --service-account="projects/<YOUR_PROJECT_ID>/serviceAccounts/<YOUR_PROJECT_NUMBER>@cloudbuild.gserviceaccount.com"
 ```
 
-Replace `<YOUR_REPOSITORY>` and `<YOUR_GITHUB_USERNAME>` with your repository details.
+Replace `<YOUR_REPOSITORY>`, `<YOUR_GITHUB_USERNAME>`, `<YOUR_PROJECT_ID>`, and `<YOUR_PROJECT_NUMBER>` with your project details.
+
+To confirm the trigger exists:
+```bash
+gcloud builds triggers list --region=global
+```
+
+> **Note**: The above command requires your GitHub repository to be connected to Cloud Build. If it fails, please connect your repository via the [Google Cloud Console Triggers Page](https://console.cloud.google.com/cloud-build/triggers). It failed for me, so ensure your repo is connected.
 
 ---
 
-## **10. Test the Application**
+## **10. GCP Services & Cost Analysis**
+
+### **10.1 GCP Services Used**
+| Service | Purpose | Justification |
+|---------|---------|---------------|
+| **Cloud Build** | CI/CD Pipeline | Native integration with GCP, supports containerized builds, and secure secret access. |
+| **Secret Manager** | Security | Securely stores API keys and config, preventing credential leakage in source code. |
+| **Firebase Hosting** | Web Hosting | Deployment target for the built SPA (`firebase deploy --only hosting`). Global CDN, SSL by default, and optimized for Ionic/Angular single-page apps. |
+| **Cloud Firestore** | Database | NoSQL database perfect for flexible data structures in mobile apps; real-time capabilities. |
+| **Google Maps API** | Location Services | Provides map visualization for property listings. |
+
+Overall, this is a **serverless** architecture: the frontend is deployed to managed hosting and it uses managed services (Firestore + Secret Manager) with CI/CD handled by Cloud Build.
+
+### **10.2 Cost Calculation (Monthly Estimate)**
+Based on the exported Google Cloud Pricing Calculator estimate (EUR):
+
+| Service | Monthly Estimate (EUR) | Notes |
+|---------|-------------------------|-------|
+| **Cloud Firestore** | **€20.20896** | 1M Reads (€9.72829) + 200K Writes (€5.52976) + 50GB Storage (€4.95091) (europe-west2). |
+| **Firebase Hosting** | **€15.08948** | Pricing Calculator export lists these under **Firebase App Hosting** SKUs (cached/uncached bytes, 10K requests + 2 vCPUs + 8GB memory, 10GB artifact storage). |
+| **Cloud Build** | **€0.00259** | Default pool CPU/RAM usage (global). |
+| **Secret Manager** | **€0.00** | Access/rotate/storage items estimated at €0 in this export. |
+| **Google Maps API** | **€0.00** | Estimated as €0 in this export. |
+| **Total** | **€35.30101** | Calculator export total. |
+
+Pricing Calculator URL: https://cloud.google.com/calculator?dl=CjhDaVE1TnpRMk1qVmpaaTAxWXpJeExUUmpNemt0WWpRMk5TMWtNMkU0TWpZeU9EWmhPRGtRQWc9PRokQTc0M0M1MDYtOEE4RC00QjlBLUI2NTMtMEI3NDZEOEQ5RTk1
+
+---
+
+## **11. AI Tools Usage Declaration**
+
+| Tool | Usage Description | Reliance Level |
+|------|-------------------|----------------|
+| **GitHub Copilot** | Used to generate boilerplate code for `cloudbuild.yaml`, debug TypeScript & build errors in `identity.ts`, and format this documentation. | High |
+
+---
+
+## **12. Test the Application**
 
 1. Visit your application at:
    ```
    https://<YOUR_PROJECT_ID>.web.app
    ```
-
 ---
 
-## **11. Cleanup**
+## **13. Cleanup**
 
 To avoid incurring unnecessary costs, clean up the resources:
 
@@ -290,7 +330,7 @@ Replace `<PROJECT_ID>` with your project ID.
 
 ---
 
-## **Troubleshooting**
+## **14. Troubleshooting**
 
 ### **Build Fails on "firebase command not found"**
 Ensure the Cloud Build step installs `firebase-tools` globally (`npm install -g firebase-tools`) before running deploy commands.
@@ -300,3 +340,8 @@ Ensure the Cloud Build service account has the `Firebase Hosting Admin` role.
 
 ### **Firestore Connection Issues**
 Check that your `environment.prod.ts` has the correct `projectId` and `apiKey`. Ensure Firestore rules allow read/write access (for development/testing).
+
+## **listMe Application**
+https://listme-dc189.web.app
+## **GitHub Repository** 
+https://github.com/MarvelUsoroh/listme
